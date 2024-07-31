@@ -21,7 +21,7 @@
       }
     </style>
   </head>
-  <body onload="gapiLoaded()">
+  <body>
     <h1>Google Sheets Editor</h1>
 
     <!-- Login and Logout Buttons -->
@@ -57,11 +57,13 @@
     </div>
 
     <!-- Scripts -->
-    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <!-- <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script> -->
+
     <script src="https://apis.google.com/js/api.js"></script>
-    <script>
+    <script src="https://accounts.google.com/gsi/client"></script>
+
+    <script type="text/javascript">
       let tokenClient;
       let gapiInited = false;
       let gisInited = false;
@@ -76,24 +78,27 @@
         appId: "1:918068116894:web:85cb38aba080c488766a8f",
         measurementId: "G-C4E3X26E2Y",
       };
-      firebase.initializeApp(firebaseConfig);
-      const auth = firebase.auth();
+      // firebase.initializeApp(firebaseConfig);
+      // const auth = firebase.auth();
 
       // Authentication functions
-      function handleAuthClick() {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        auth
-          .signInWithPopup(provider)
-          .catch((error) => console.error("Authentication error", error));
-      }
+      // function handleAuthClick() {
+      //   const provider = new firebase.auth.GoogleAuthProvider();
+      //   auth
+      //     .signInWithPopup(provider)
+      //     .catch((error) => console.error("Authentication error", error));
+      // }
 
-      function handleSignoutClick() {
-        auth.signOut().catch((error) => console.error("Sign-out error", error));
-      }
+      // function handleSignoutClick() {
+      //   auth.signOut().catch((error) => console.error("Sign-out error", error));
+      // }
 
       function handleCredentialResponse(response) {
         const responsePayload = decodeJwtResponse(response.credential);
         console.log("User authenticated:", responsePayload);
+        gapiInited = true;
+        gisInited = true;
+        updateSigninStatus();
       }
 
       function decodeJwtResponse(token) {
@@ -145,7 +150,8 @@
         return match ? match[1] : null;
       }
 
-      function updateSigninStatus(isSignedIn) {
+      function updateSigninStatus() {
+        const isSignedIn = gapiInited && gisInited;
         document.getElementById("login-button").style.display = isSignedIn
           ? "none"
           : "block";
@@ -157,29 +163,48 @@
           : "none";
       }
 
-      function initGapiClient() {
-        gapi.client
-          .init({
-            apiKey: "AIzaSyCYEfgfPQm_PawKGjB2HyTsxX-F7e8GGLs",
-            clientId:
-              "122207018650-41btul5t6i9u7ponne39mv5682bhpcml.apps.googleusercontent.com",
-            discoveryDocs: [
-              "https://sheets.googleapis.com/$discovery/rest?version=v4",
-            ],
-            scope: "https://www.googleapis.com/auth/spreadsheets",
-          })
-          .then(() => {
-            console.log("gapi client initialized successfully");
-            gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
-            updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
-          })
-          .catch((error) =>
-            console.error("Error initializing GAPI client", error)
-          );
+      // function initGapiClient() {
+      //   gapi.client
+      //     .init({
+      //       apiKey: "AIzaSyCYEfgfPQm_PawKGjB2HyTsxX-F7e8GGLs",
+      //       clientId:
+      //         "122207018650-41btul5t6i9u7ponne39mv5682bhpcml.apps.googleusercontent.com",
+      //       discoveryDocs: [
+      //         "https://sheets.googleapis.com/$discovery/rest?version=v4",
+      //       ],
+      //       scope: "https://www.googleapis.com/auth/spreadsheets",
+      //     })
+      //     .then(() => {
+      //       console.log("gapi client initialized successfully");
+      //       gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
+      //       updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
+      //     })
+      //     .catch((error) =>
+      //       console.error("Error initializing GAPI client", error)
+      //     );
+      // }
+      function gisLoaded() {
+        tokenClient = google.accounts.oauth2.initTokenClient({
+          clientId:
+            "122207018650-41btul5t6i9u7ponne39mv5682bhpcml.apps.googleusercontent.com",
+          scope: "https://www.googleapis.com/auth/spreadsheets",
+          callback: "", // defined later
+        });
+        gisInited = true;
+        updateSigninStatus();
       }
-      function gapiLoaded() {
-        gapi.load("client", initGapiClient);
+      gisLoaded();
+      async function gapiLoaded() {
+        await gapi.client.init({
+          apiKey: "AIzaSyCYEfgfPQm_PawKGjB2HyTsxX-F7e8GGLs",
+          discoveryDocs: [
+            "https://sheets.googleapis.com/$discovery/rest?version=v4",
+          ],
+        });
+        gapiInited = true;
+        updateSigninStatus();
       }
+      gapiLoaded();
     </script>
   </body>
 </html>
