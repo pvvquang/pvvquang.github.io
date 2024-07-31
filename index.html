@@ -185,7 +185,7 @@
       // }
       function gisLoaded() {
         tokenClient = google.accounts.oauth2.initTokenClient({
-          clientId:
+          client_id:
             "122207018650-41btul5t6i9u7ponne39mv5682bhpcml.apps.googleusercontent.com",
           scope: "https://www.googleapis.com/auth/spreadsheets",
           callback: "", // defined later
@@ -194,17 +194,25 @@
         updateSigninStatus();
       }
       gisLoaded();
-      async function gapiLoaded() {
-        await gapi.client.init({
-          apiKey: "AIzaSyCYEfgfPQm_PawKGjB2HyTsxX-F7e8GGLs",
-          clientId:
-            "122207018650-41btul5t6i9u7ponne39mv5682bhpcml.apps.googleusercontent.com",
-          discoveryDocs: [
-            "https://sheets.googleapis.com/$discovery/rest?version=v4",
-          ],
-        });
-        gapiInited = true;
-        updateSigninStatus();
+      function gapiLoaded() {
+        console.log("gappiiiii", gapi.load());
+        gapi.client
+          .init({
+            apiKey: "AIzaSyCYEfgfPQm_PawKGjB2HyTsxX-F7e8GGLs",
+            clientId:
+              "122207018650-41btul5t6i9u7ponne39mv5682bhpcml.apps.googleusercontent.com",
+            discoveryDocs: [
+              "https://sheets.googleapis.com/$discovery/rest?version=v4",
+            ],
+            scope: "https://www.googleapis.com/auth/spreadsheets",
+          })
+          .then(() => {
+            gapiInited = true;
+            updateSigninStatus();
+          })
+          .catch((err) => {
+            console.error("Error initializing GAPI client", err);
+          });
       }
       gapiLoaded();
     </script>
