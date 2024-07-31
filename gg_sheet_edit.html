@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Google Sheets Editor</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        max-width: 600px;
+        margin: auto;
+      }
+      #login-button,
+      #logout-button {
+        display: block;
+        margin: 20px 0;
+      }
+      #editor {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Google Sheets Editor</h1>
+
+    <!-- Login and Logout Buttons -->
+    <button id="login-button" onclick="handleAuthClick()">
+      Login with Google
+    </button>
+    <button
+      id="logout-button"
+      onclick="handleSignoutClick()"
+      style="display: none"
+    >
+      Logout
+    </button>
+
+    <!-- Editor Section -->
+    <div id="editor">
+      <h2>Edit Google Sheet Cell</h2>
+      <label for="sheetLink">Google Sheet URL:</label>
+      <input type="text" id="sheetLink" placeholder="Enter Google Sheet URL" />
+
+      <label for="cellPosition">Cell Position (e.g., A1):</label>
+      <input type="text" id="cellPosition" placeholder="Enter cell position" />
+
+      <label for="cellValue">New Value:</label>
+      <input type="text" id="cellValue" placeholder="Enter new value" />
+
+      <button onclick="updateCell()">Update Cell</button>
+      <div id="status"></div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script>
+      // Your web app's Firebase configuration
+      var firebaseConfig = {
+        apiKey: "AIzaSyACCtytIKkQTaGi0CAGQiDkDZ9zAmUaR-4",
+        authDomain: "ggsheetedit-5bcb6.firebaseapp.com",
+        projectId: "ggsheetedit-5bcb6",
+        storageBucket: "ggsheetedit-5bcb6.appspot.com",
+        messagingSenderId: "918068116894",
+        appId: "1:918068116894:web:85cb38aba080c488766a8f",
+        measurementId: "G-C4E3X26E2Y",
+      };
+      // Initialize Firebase
+      firebase.initializeApp(firebaseConfig);
+
+      var auth = firebase.auth();
+
+      function handleAuthClick() {
+        var provider = new firebase.auth.GoogleAuthProvider();
+        auth.signInWithPopup(provider).catch(function (error) {
+          console.error("Authentication error", error);
+        });
+      }
+
+      function handleSignoutClick() {
+        auth.signOut().catch(function (error) {
+          console.error("Sign-out error", error);
+        });
+      }
+
+      function updateCell() {
+        var sheetLink = document.getElementById("sheetLink").value;
+        var cellPosition = document.getElementById("cellPosition").value;
+        var value = document.getElementById("cellValue").value;
+        var statusElement = document.getElementById("status");
+
+        if (sheetLink && cellPosition && value) {
+          var spreadsheetId = extractSpreadsheetId(sheetLink);
+          var params = {
+            spreadsheetId: spreadsheetId,
+            range: cellPosition,
+            valueInputOption: "RAW",
+          };
+
+          var valueRangeBody = {
+            values: [[value]],
+          };
+
+          gapi.load("client:auth2", function () {
+            gapi.client
+              .init({
+                apiKey: "AIzaSyCYEfgfPQm_PawKGjB2HyTsxX-F7e8GGLs",
+                clientId:
+                  "122207018650-41btul5t6i9u7ponne39mv5682bhpcml.apps.googleusercontent.com",
+                discoveryDocs: [
+                  "https://sheets.googleapis.com/$discovery/rest?version=v4",
+                ],
+                scope: "https://www.googleapis.com/auth/spreadsheets",
+              })
+              .then(function () {
+                gapi.auth2
+                  .getAuthInstance()
+                  .signIn()
+                  .then(function () {
+                    gapi.client.sheets.spreadsheets.values
+                      .update(params, valueRangeBody)
+                      .then(function (response) {
+                        statusElement.textContent =
+                          "Cell updated successfully!";
+                      })
+                      .catch(function (error) {
+                        console.error("Error updating cell", error);
+                        statusElement.textContent = "Failed to update cell.";
+                      });
+                  })
+                  .catch(function (error) {
+                    console.error("Sign-in error", error);
+                  });
+              })
+              .catch(function (error) {
+                console.error("GAPI initialization error", error);
+              });
+          });
+        } else {
+          statusElement.textContent = "Please fill in all fields.";
+        }
+      }
+
+      function extractSpreadsheetId(url) {
+        var regex = /spreadsheets\/d\/([a-zA-Z0-9-_]+)/;
+        var match = url.match(regex);
+        return match ? match[1] : null;
+      }
+
+      function updateSigninStatus(isSignedIn) {
+        if (isSignedIn) {
+          document.getElementById("login-button").style.display = "none";
+          document.getElementById("logout-button").style.display = "block";
+          document.getElementById("editor").style.display = "block";
+        } else {
+          document.getElementById("login-button").style.display = "block";
+          document.getElementById("logout-button").style.display = "none";
+          document.getElementById("editor").style.display = "none";
+        }
+      }
+
+      gapi.load("client:auth2", function () {
+        gapi.client
+          .init({
+            apiKey: "AIzaSyCYEfgfPQm_PawKGjB2HyTsxX-F7e8GGLs",
+            clientId:
+              "122207018650-41btul5t6i9u7ponne39mv5682bhpcml.apps.googleusercontent.com",
+            discoveryDocs: [
+              "https://sheets.googleapis.com/$discovery/rest?version=v4",
+            ],
+            scope: "https://www.googleapis.com/auth/spreadsheets",
+          })
+          .then(function () {
+            gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
+            updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
+          })
+          .catch(function (error) {
+            console.error("Error initializing GAPI client", error);
+          });
+      });
+    </script>
+  </body>
+</html>
