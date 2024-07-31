@@ -21,7 +21,7 @@
       }
     </style>
   </head>
-  <body>
+  <body onload="gisLoaded()">
     <h1>Google Sheets Editor</h1>
 
     <!-- Login and Logout Buttons -->
@@ -59,9 +59,16 @@
     <!-- Scripts -->
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
-    <script src="https://apis.google.com/js/api.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script
+      src="https://apis.google.com/js/api.js"
+      onload="gapiLoaded()"
+    ></script>
     <script>
+      let tokenClient;
+      let gapiInited = false;
+      let gisInited = false;
+
       // Firebase configuration
       const firebaseConfig = {
         apiKey: "AIzaSyACCtytIKkQTaGi0CAGQiDkDZ9zAmUaR-4",
@@ -74,17 +81,6 @@
       };
       firebase.initializeApp(firebaseConfig);
       const auth = firebase.auth();
-
-      // Google API configuration
-      const gapiConfig = {
-        apiKey: "AIzaSyCYEfgfPQm_PawKGjB2HyTsxX-F7e8GGLs",
-        clientId:
-          "122207018650-41btul5t6i9u7ponne39mv5682bhpcml.apps.googleusercontent.com",
-        discoveryDocs: [
-          "https://sheets.googleapis.com/$discovery/rest?version=v4",
-        ],
-        scope: "https://www.googleapis.com/auth/spreadsheets",
-      };
 
       // Authentication functions
       function handleAuthClick() {
@@ -166,8 +162,17 @@
 
       function initGapiClient() {
         gapi.client
-          .init(gapiConfig)
+          .init({
+            apiKey: "AIzaSyCYEfgfPQm_PawKGjB2HyTsxX-F7e8GGLs",
+            clientId:
+              "122207018650-41btul5t6i9u7ponne39mv5682bhpcml.apps.googleusercontent.com",
+            discoveryDocs: [
+              "https://sheets.googleapis.com/$discovery/rest?version=v4",
+            ],
+            scope: "https://www.googleapis.com/auth/spreadsheets",
+          })
           .then(() => {
+            console.log("gapi client initialized successfully");
             gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
             updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
           })
@@ -175,8 +180,9 @@
             console.error("Error initializing GAPI client", error)
           );
       }
-
-      gapi.load("client:auth2", initGapiClient);
+      function gapiLoaded() {
+        gapi.load("client", initGapiClient);
+      }
     </script>
   </body>
 </html>
